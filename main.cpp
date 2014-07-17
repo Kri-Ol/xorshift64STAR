@@ -6,15 +6,14 @@
 
 #include <iostream>
 
-#include "LCG_PLE63.hpp"
-#include "std_LCG_PLE63.hpp"
+#include "xorshift64star.hpp"
 
 static uint64_t find_period(uint64_t N, std::ostream& os)
 {
     constexpr uint32_t BILLION = 1024U*1024U*1024U;
 
-    OTI::lcg_PLE63 rng;
-    OTI::lcg_PLE63::seed_type the_seed = rng.seed();
+    OTI::xorshift64star rng;
+    OTI::xorshift64star::seed_type the_seed = rng.seed();
 
     N /= BILLION; // number of billions
 
@@ -30,7 +29,7 @@ static uint64_t find_period(uint64_t N, std::ostream& os)
         }
         os << "Passed: " << i << std::endl;
     }
-    // skip the leftover
+    // skip the leftover...
 
     return 0ULL;
 }
@@ -48,7 +47,7 @@ static std::pair<float,float> test_mean_sigma(uint64_t n)
     std::pair<float,float> s{0.0, 0.0};
     std::pair<float,float> d{0.0, 0.0};
 
-    OTI::lcg_PLE63 rng;
+    OTI::xorshift64star rng;
 
     for(uint64_t k = 0; k != n; ++k)
     {
@@ -73,8 +72,8 @@ static bool test_skip_ahead(int64_t ns)
 {
     assert( ns > 0LL);
 
-    OTI::lcg_PLE63 rng;
-    OTI::lcg_PLE63 rngs{rng};
+    OTI::xorshift64star rng;
+    OTI::xorshift64star rngs{rng};
 
     rngs.skip(ns);
 
@@ -88,100 +87,21 @@ static bool test_skip_ahead(int64_t ns)
     return (rng.seed() == rngs.seed());
 }
 
-static bool test_skip_ahead_and_back(int64_t ns)
-{
-    assert( ns > 0LL);
-
-    OTI::lcg_PLE63 rng;
-
-    OTI::lcg_PLE63::seed_type the_seed = rng.seed();
-
-    rng.skip(ns);
-    rng.skip(-ns);
-
-    return (rng.seed() == the_seed);
-}
-
 static bool test_skip_zero()
 {
-    OTI::lcg_PLE63 rng;
+    OTI::xorshift64star rng;
 
-    OTI::lcg_PLE63::seed_type the_seed = rng.seed();
+    OTI::xorshift64star::seed_type the_seed = rng.seed();
 
     rng.skip(0LL);
 
     return (rng.seed() == the_seed);
 }
 
-static bool test_skip_backward(int64_t ns)
-{
-    assert( ns < 0LL);
-
-    OTI::lcg_PLE63 rng;
-    OTI::lcg_PLE63::seed_type the_seed = rng.seed();
-
-    // internal skip-ahead
-    rng.skip(ns);
-
-    // manual skip-ahead by same number of steps
-    uint64_t fns = abs(ns);   
-    for(uint64_t k = 0; k != fns; ++k)
-    {
-        rng.sample();
-    }
-
-    return (rng.seed() == the_seed);
-}
-
-static bool test_skip_backward_and_back(int64_t ns)
-{
-    assert( ns < 0LL);
-
-    OTI::lcg_PLE63 rng;
-    OTI::lcg_PLE63::seed_type the_seed = rng.seed();
-
-    rng.skip(ns);
-    rng.skip(-ns);
-
-    return (rng.seed() == the_seed);
-}
-
-static bool test_custom_vs_std(uint64_t ns)
-{
-    OTI::lcg_PLE63 rng;
-    std::linear_congruential_engine<uint_fast64_t, 2806196910506780709ULL, 1ULL, (1ULL<<63ULL)> rng_std;
-
-    for(uint64_t k = 0; k != ns; ++k)
-    {
-        rng.sample();
-        OTI::lcg_PLE63::seed_type rseed = rng.seed();
-
-        OTI::lcg_PLE63::seed_type sseed = rng_std();
-
-        if (rseed != sseed)
-            return false;
-    }
-
-    return true;
-}
-
-static bool test_skip_custom_vs_std(int64_t ns)
-{
-    OTI::lcg_PLE63 rng;
-    std::linear_congruential_engine<uint_fast64_t, 2806196910506780709ULL, 1ULL, (1ULL<<63ULL)> rng_std;
-
-    rng.skip(ns);
-    OTI::lcg_PLE63::seed_type rseed = rng.seed();
-
-    rng_std.discard(ns);
-    OTI::lcg_PLE63::seed_type sseed = rng_std.the_seed();
-
-    return (rseed == sseed);
-}
 
 int main(int argc, char* argv[])
 {
-    OTI::lcg_PLE63::result_type period = find_period(2500000000ULL, std::cout); 
+    OTI::xorshift64star::result_type period = find_period(2500000000ULL, std::cout); 
     std::cout << "Found period: " << period << std::endl;
 
     std::pair<float,float> r = test_mean_sigma(50000000ULL);
@@ -192,25 +112,7 @@ int main(int argc, char* argv[])
     q = test_skip_ahead(777777LL);
     assert(q);
 
-    q = test_skip_ahead_and_back(12391LL);
-    assert(q);
-    
     test_skip_zero();
-    assert(q);
-
-    q = test_skip_backward(-7788991LL);
-    assert(q);
-
-    q = test_skip_backward_and_back(-12391LL);
-    assert(q);
-
-    q = test_custom_vs_std(10ULL);
-    assert(q);
-
-    q = test_skip_custom_vs_std(10ULL);
-    assert(q);
-
-    q = test_skip_custom_vs_std(123987LL);
     assert(q);
 
     return 0;

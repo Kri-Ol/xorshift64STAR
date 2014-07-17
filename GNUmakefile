@@ -50,22 +50,22 @@ DEFS  :=
 # object files - done by string substitution
 #
 
-SRCS_LCG := main.cpp LCG_PLE63.cpp
-OBJS_LCG := $(addsuffix .o, $(basename $(SRCS_LCG)))	
-DEPS_LCG := $(addsuffix .d, $(basename $(SRCS_LCG)))
+SRCS_XSS := main.cpp xorshift64star.cpp
+OBJS_XSS := $(addsuffix .o, $(basename $(SRCS_XSS)))	
+DEPS_XSS := $(addsuffix .d, $(basename $(SRCS_XSS)))
 
-OBJS := $(OBJS_LCG)
-DEPS := $(DEPS_LCG)
+OBJS := $(OBJS_XSS)
+DEPS := $(DEPS_XSS)
 
 # all targets
 
-LCG := lcg
+XSS := xss
 
 .PHONY: all tags dox clean realclean
 
-all: $(LCG)
+all: $(XSS)
 
-$(LCG): $(OBJS_LCG)
+$(XSS): $(OBJS_XSS)
 	$(LD) $(LDFLAGS) -o $@ $(wordlist 1,10000000,$^) -L/usr/local/lib $(SYSLIB)	
 
 #dependencies
@@ -81,11 +81,11 @@ dox:
 	doxygen
 
 clean:
-	-rm -rf $(LCG)
+	-rm -rf $(XSS)
 	-rm -rf $(OBJS)
 
 realclean:
-	-rm -rf $(LCG)
+	-rm -rf $(XSS)
 	-rm -rf $(OBJS)
 	-rm -rf $(DEPS)
 	-rm -rf TAGS
